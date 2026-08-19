@@ -2,7 +2,7 @@
 ai_assistant.py
 A lightweight, retrieval-based product Q&A assistant.
 Uses TF-IDF + cosine similarity to match customer questions
-against product descriptions — no external API required.
+against product descriptions - no external API required.
 """
 
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -17,10 +17,16 @@ class ProductAssistant:
 
     def fit(self, products):
         """
-        products: list of dicts, each with at least 'name', 'description', 'category'
-        Builds the TF-IDF matrix from product text (name + description + category combined).
+        products: list of dicts, each with at least 'name', 'description', 'category'.
+        Builds the TF-IDF matrix from product text (name + brand + category + description).
+        Safely does nothing if there are no products yet (e.g. fresh database).
         """
         self.products = products
+
+        if not products:
+            self.product_vectors = None
+            return
+
         corpus = [
             f"{p['name']} {p['brand']} {p['category']} {p['description']}"
             for p in products
@@ -44,7 +50,7 @@ class ProductAssistant:
 
         results = []
         for product, score in ranked[:top_k]:
-            if score > 0:  # skip completely irrelevant matches
+            if score > 0:
                 results.append({**product, "match_score": round(float(score), 3)})
 
         return results
