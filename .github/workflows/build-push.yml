@@ -43,14 +43,12 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.REPO_NAME }}-backend:latest
             ${{ env.REGISTRY }}/${{ env.REPO_NAME }}-backend:${{ github.sha }}
 
-        - name: Build and push frontend image
-          uses: docker/build-push-action@v5
-          with:
-            context: ./frontend
-            file: ./frontend/Containerfile
-            push: true
-            build-args: |
-              VITE_API_URL=http://32.197.186.49:30500
-            tags: |
-              ${{ env.REGISTRY }}/${{ env.REPO_NAME }}-frontend:latest
-              ${{ env.REGISTRY }}/${{ env.REPO_NAME }}-frontend:${{ github.sha }}
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Containerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPO_NAME }}-frontend:latest
+            ${{ env.REGISTRY }}/${{ env.REPO_NAME }}-frontend:${{ github.sha }}
