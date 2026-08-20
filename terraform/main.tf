@@ -80,12 +80,19 @@ resource "aws_instance" "app_server" {
   instance_type          = var.instance_type
   key_name               = var.key_pair_name
   vpc_security_group_ids = [aws_security_group.app_sg.id]
-
   root_block_device {
     volume_size = 20  # k3s + Postgres + 2 app images need more than the 8GB default
   }
-
   tags = {
     Name = "${var.project_name}-server"
+  }
+}
+
+resource "aws_eip" "app_eip" {
+  instance = aws_instance.app_server.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "${var.project_name}-eip"
   }
 }
