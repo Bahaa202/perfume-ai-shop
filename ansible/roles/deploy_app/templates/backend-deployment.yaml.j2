@@ -17,6 +17,7 @@ spec:
       containers:
         - name: perfume-backend
           image: ghcr.io/bahaa202/perfume-ai-shop-backend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
           env:
