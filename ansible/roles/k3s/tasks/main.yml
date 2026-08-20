@@ -1,0 +1,47 @@
+---
+- name: Check if k3s is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_binary
+
+- name: Download and install k3s (lightweight config for low-memory instances)
+  ansible.builtin.shell: >
+    curl -sfL https://get.k3s.io | sh -s - server
+    --disable traefik
+    --disable servicelb
+    --disable metrics-server
+    --write-kubeconfig-mode 644
+  become: true
+  when: not k3s_binary.stat.exists
+
+- name: Wait for k3s to be ready
+  ansible.builtin.wait_for:
+    path: /etc/rancher/k3s/k3s.yaml
+    timeout: 60
+
+- name: Ensure k3s service is running and enabled
+  ansible.builtin.systemd:
+    name: k3s
+    state: started
+    enabled: true
+  become: true
+
+- name: Set up kubeconfig access for ec2-user (so kubectl works without sudo)
+  ansible.builtin.shell: |
+    mkdir -p /home/ec2-user/.kube
+    cp /etc/rancher/k3s/k3s.yaml /home/ec2-user/.kube/config
+    chown ec2-user:ec2-user /home/ec2-user/.kube/config
+    chmod 600 /home/ec2-user/.kube/config
+  become: true
+  args:
+    creates: /home/ec2-user/.kube/config
+
+- name: Verify k3s node is ready
+  ansible.builtin.command: /usr/local/bin/k3s kubectl get nodes
+  become: true
+  register: k3s_nodes
+  changed_when: false
+
+- name: Show k3s node status
+  ansible.builtin.debug:
+    var: k3s_nodes.stdout

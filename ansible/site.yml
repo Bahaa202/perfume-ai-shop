@@ -1,0 +1,8 @@
+---
+- name: Setup Perfume AI Shop Server
+  hosts: app_servers
+  gather_facts: true
+
+  roles:
+    - podman
+    - k3s
