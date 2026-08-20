@@ -5,9 +5,9 @@ variable "aws_region" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type (must stay in Free Tier)"
+  description = "EC2 instance type (2GB RAM needed for k3s + Podman + app workloads)"
   type        = string
-  default     = "t3.micro"
+  default     = "t3.small"
 }
 
 variable "key_pair_name" {

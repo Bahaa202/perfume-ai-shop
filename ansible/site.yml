@@ -6,3 +6,4 @@
   roles:
     - podman
     - k3s
+    - deploy_app

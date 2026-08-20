@@ -1,0 +1,75 @@
+---
+# ----------------------------
+# PostgreSQL (Podman, outside K8s)
+# ----------------------------
+- name: Stop existing Postgres container (ignore if not found)
+  ansible.builtin.command: podman stop perfume-db
+  register: stop_pg
+  failed_when: false
+  changed_when: stop_pg.rc == 0
+
+- name: Remove existing Postgres container (ignore if not found)
+  ansible.builtin.command: podman rm perfume-db
+  register: rm_pg
+  failed_when: false
+  changed_when: rm_pg.rc == 0
+
+- name: Run PostgreSQL container
+  ansible.builtin.command: >
+    podman run -d --name perfume-db
+    -p 0.0.0.0:5432:5432
+    --restart=always
+    -e POSTGRES_USER=perfume_admin
+    -e POSTGRES_PASSWORD=devlocal123
+    -e POSTGRES_DB=perfume_shop
+    docker.io/postgres:16
+  register: run_pg
+  changed_when: true
+
+- name: Wait for Postgres to accept connections
+  ansible.builtin.pause:
+    seconds: 10
+
+# ----------------------------
+# Kubernetes manifests (backend + frontend)
+# ----------------------------
+- name: Render backend K8s manifest (inject correct internal IP)
+  ansible.builtin.template:
+    src: backend-deployment.yaml.j2
+    dest: /home/ec2-user/backend-deployment.yaml
+    mode: "0644"
+
+- name: Copy frontend K8s manifest
+  ansible.builtin.copy:
+    src: frontend-deployment.yaml
+    dest: /home/ec2-user/frontend-deployment.yaml
+    mode: "0644"
+
+- name: Apply backend manifest
+  ansible.builtin.command: kubectl apply -f /home/ec2-user/backend-deployment.yaml
+  environment:
+    KUBECONFIG: /home/ec2-user/.kube/config
+  register: apply_backend
+  changed_when: "'unchanged' not in apply_backend.stdout"
+
+- name: Apply frontend manifest
+  ansible.builtin.command: kubectl apply -f /home/ec2-user/frontend-deployment.yaml
+  environment:
+    KUBECONFIG: /home/ec2-user/.kube/config
+  register: apply_frontend
+  changed_when: "'unchanged' not in apply_frontend.stdout"
+
+- name: Wait for pods to be ready
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Show pod status
+  ansible.builtin.command: kubectl get pods
+  environment:
+    KUBECONFIG: /home/ec2-user/.kube/config
+  register: pod_status
+  changed_when: false
+
+- name: Display pod status
+  ansible.builtin.debug:
+    var: pod_status.stdout_lines

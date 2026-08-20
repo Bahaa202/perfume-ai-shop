@@ -48,9 +48,9 @@ resource "aws_security_group" "app_sg" {
   }
 
   ingress {
-    description = "Backend API (direct access for testing)"
-    from_port   = 5000
-    to_port     = 5000
+    description = "Kubernetes NodePort range (backend + frontend services)"
+    from_port   = 30000
+    to_port     = 32767
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
